@@ -1,0 +1,14 @@
+{
+  "name": "bup-research-nexus",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n api,web -c yellow,cyan \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "start": "npm start --prefix server",
+    "build": "npm run build --prefix client",
+    "seed": "npm run seed --prefix server",
+    "test": "npm test --prefix server"
+  },
+  "dependencies": {
+    "concurrently": "^10.0.6"
+  }
+}
