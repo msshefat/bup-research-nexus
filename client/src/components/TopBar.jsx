@@ -30,6 +30,9 @@ export function TopBar() {
   const [query, setQuery] = useState('');
   const [unreadCount, setUnreadCount] = useState(0);
   const unread = user ? unreadCount : 0;
+  const navLinks = user && (user.role === 'faculty' || user.role === 'alumni')
+    ? [...links, { to: '/running', label: 'Running' }]
+    : links;
 
   useEffect(() => {
     if (!user) return undefined;
@@ -79,7 +82,7 @@ export function TopBar() {
         </Link>
 
         <nav className="ml-2 hidden items-center gap-0.5 lg:flex" aria-label="Primary">
-          {links.map((link) => (
+          {navLinks.map((link) => (
             <NavLink key={link.label} to={link.to} className={linkClass(isActive(link))}>
               {link.label}
             </NavLink>
@@ -138,6 +141,11 @@ export function TopBar() {
                   <Link className="block rounded-xl px-3 py-2 text-sm hover:bg-panel-2" to="/requests">
                     Requests
                   </Link>
+                  {user.role === 'faculty' || user.role === 'alumni' ? (
+                    <Link className="block rounded-xl px-3 py-2 text-sm hover:bg-panel-2" to="/running">
+                      Running opportunities
+                    </Link>
+                  ) : null}
                   {user.role === 'admin' ? (
                     <Link className="block rounded-xl px-3 py-2 text-sm hover:bg-panel-2" to="/admin">
                       Administration
@@ -192,7 +200,7 @@ export function TopBar() {
             <button type="button" onClick={toggle} className="rounded-full px-3 py-1.5 text-left text-sm text-paper">
               {theme === 'dark' ? 'Light theme' : 'Dark theme'}
             </button>
-            {links.map((link) => (
+            {navLinks.map((link) => (
               <NavLink key={link.label} to={link.to} className={linkClass(isActive(link))}>
                 {link.label}
               </NavLink>

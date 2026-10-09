@@ -4,6 +4,7 @@ import { Opportunity } from '../models/Opportunity.js';
 import { Project } from '../models/Project.js';
 import { Publication } from '../models/Publication.js';
 import { Request } from '../models/Request.js';
+import { Message } from '../models/Message.js';
 import { Notification } from '../models/Notification.js';
 import { asyncHandler, HttpError } from '../http.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
@@ -93,6 +94,10 @@ router.delete(
     }
     const user = await User.findById(req.params.id);
     if (!user) throw new HttpError(404, 'User not found.');
+    const related = await Request.find({ $or: [{ from: user.id }, { to: user.id }] }).select('_id');
+    await Message.deleteMany({
+      $or: [{ request: { $in: related.map((row) => row._id) } }, { from: user.id }],
+    });
     await Promise.all([
       Publication.deleteMany({ owner: user.id }),
       Opportunity.deleteMany({ supervisor: user.id }),

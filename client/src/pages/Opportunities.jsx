@@ -5,6 +5,7 @@ import { useAuth } from '../auth';
 import { AREAS, formatDate } from '../constants';
 import { AreaTags, OpportunityCard } from '../components/Cards';
 import { RequestDialog } from '../components/RequestDialog';
+import { Thread } from '../components/Thread';
 import { Badge, Button, Empty, ErrorNote, Loading, controlClass, statusTone } from '../components/ui';
 
 export function Opportunities() {
@@ -198,10 +199,13 @@ export function OpportunityDetail() {
               </Button>
             </div>
           ) : item.myApplication ? (
-            <p className="mt-4 text-sm text-paper">
-              Your application is {item.myApplication.status}.
-              {item.myApplication.responseNote ? ` Reply: ${item.myApplication.responseNote}` : ''}
-            </p>
+            <div className="mt-4">
+              <p className="text-sm text-paper">
+                Your application is {item.myApplication.status}.
+                {item.myApplication.status !== 'accepted' && item.myApplication.responseNote ? ` Reply: ${item.myApplication.responseNote}` : ''}
+              </p>
+              {item.myApplication.status === 'accepted' ? <Thread requestId={item.myApplication._id} /> : null}
+            </div>
           ) : item.status === 'open' && supervisor.verified ? (
             <button type="button" className="mt-4 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-on-gold" onClick={() => setAsking(true)}>
               Apply
@@ -230,16 +234,18 @@ export function OpportunityDetail() {
                     <Badge tone={statusTone(application.status)}>{application.status}</Badge>
                   </div>
                   <p className="mt-2 text-sm leading-6 text-mist">{application.message}</p>
-                  {application.responseNote ? <p className="mt-2 text-sm">Reply: {application.responseNote}</p> : null}
+                  {application.status !== 'accepted' && application.responseNote ? <p className="mt-2 text-sm">Reply: {application.responseNote}</p> : null}
                   {isOwner && application.status === 'pending' ? (
                     <div className="mt-3 space-y-2">
-                      <textarea className={controlClass} placeholder="Optional note" value={notes[application._id] || ''} onChange={(event) => setNotes((current) => ({ ...current, [application._id]: event.target.value }))} />
+                      <textarea className={controlClass} placeholder="Message saved if you accept" value={notes[application._id] || ''} onChange={(event) => setNotes((current) => ({ ...current, [application._id]: event.target.value }))} />
+                      <p className="text-xs text-mist">Accept keeps this message on the record. Reject stores it as a one-time reply.</p>
                       <div className="flex gap-2">
                         <Button onClick={() => respond(application._id, 'accepted')}>Accept</Button>
                         <Button variant="danger" onClick={() => respond(application._id, 'rejected')}>Reject</Button>
                       </div>
                     </div>
                   ) : null}
+                  {isOwner && application.status === 'accepted' ? <Thread requestId={application._id} /> : null}
                 </li>
               ))}
             </ul>

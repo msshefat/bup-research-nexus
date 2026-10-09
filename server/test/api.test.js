@@ -5,6 +5,7 @@ import request from 'supertest';
 import { createApp } from '../src/app.js';
 import { connectDb } from '../src/db.js';
 import { User } from '../src/models/User.js';
+import { Message } from '../src/models/Message.js';
 import bcrypt from 'bcryptjs';
 
 let app;
@@ -235,6 +236,92 @@ test('alumni can post an opportunity, review an application, then close and dele
     .delete(`/api/opportunities/${opened.body._id}`)
     .set('Authorization', `Bearer ${alumni.body.token}`);
   assert.equal(removed.status, 200);
+  assert.equal(await Message.countDocuments({ request: applied.body._id }), 0);
+});
+
+test('accepted requests keep a message record, and faculty see running work', async () => {
+  const facultyLogin = await request(app).post('/api/auth/login').send({
+    email: 'new.faculty@bup.edu.bd',
+    password: 'Faculty@2026',
+  });
+  const studentLogin = await request(app).post('/api/auth/login').send({
+    email: 'student.test@bup.edu.bd',
+    password: 'Student@2026',
+  });
+  const inbox = await request(app)
+    .get('/api/requests?box=inbox')
+    .set('Authorization', `Bearer ${facultyLogin.body.token}`);
+  const accepted = inbox.body.find((item) => item.status === 'accepted');
+  assert.ok(accepted);
+
+  const history = await request(app)
+    .get(`/api/requests/${accepted._id}/messages`)
+    .set('Authorization', `Bearer ${facultyLogin.body.token}`);
+  assert.equal(history.status, 200);
+  assert.equal(history.body.length, 1);
+  assert.equal(history.body[0].body, 'Send a one-page plan.');
+
+  const reply = await request(app)
+    .post(`/api/requests/${accepted._id}/messages`)
+    .set('Authorization', `Bearer ${studentLogin.body.token}`)
+    .send({ body: 'The one-page plan is ready.' });
+  assert.equal(reply.status, 201);
+
+  const both = await request(app)
+    .get(`/api/requests/${accepted._id}/messages`)
+    .set('Authorization', `Bearer ${studentLogin.body.token}`);
+  assert.equal(both.status, 200);
+  assert.equal(both.body.length, 2);
+
+  const stranger = await register({
+    name: 'Other Student',
+    email: 'other.student@bup.edu.bd',
+    password: 'Student@2026',
+    role: 'student',
+    department: 'CSE',
+  });
+  const denied = await request(app)
+    .get(`/api/requests/${accepted._id}/messages`)
+    .set('Authorization', `Bearer ${stranger.body.token}`);
+  assert.equal(denied.status, 403);
+
+  const pending = await request(app)
+    .post('/api/requests')
+    .set('Authorization', `Bearer ${studentLogin.body.token}`)
+    .send({
+      to: facultyLogin.body.user._id,
+      topic: 'A second question',
+      message: 'Can we talk after the first plan is reviewed?',
+      kind: 'mentorship',
+    });
+  assert.equal(pending.status, 201);
+  const tooEarly = await request(app)
+    .post(`/api/requests/${pending.body._id}/messages`)
+    .set('Authorization', `Bearer ${studentLogin.body.token}`)
+    .send({ body: 'Hello before you accept.' });
+  assert.equal(tooEarly.status, 403);
+
+  const running = await request(app)
+    .get('/api/running')
+    .set('Authorization', `Bearer ${facultyLogin.body.token}`);
+  assert.equal(running.status, 200);
+  assert.ok(running.body.opportunities.some((item) => item.title === 'A new thesis call'));
+  assert.ok(running.body.mentoring.some((item) => item.topic === 'Data science thesis'));
+
+  const studentRunning = await request(app)
+    .get('/api/running')
+    .set('Authorization', `Bearer ${studentLogin.body.token}`);
+  assert.equal(studentRunning.status, 403);
+
+  const alumniLogin = await request(app).post('/api/auth/login').send({
+    email: 'alumni.mentor@bup.edu.bd',
+    password: 'Alumni@2026',
+  });
+  const alumniRunning = await request(app)
+    .get('/api/running')
+    .set('Authorization', `Bearer ${alumniLogin.body.token}`);
+  assert.equal(alumniRunning.status, 200);
+  assert.equal(alumniRunning.body.opportunities.length, 0);
 });
 
 test('an administrator can delete another account but not their own', async () => {

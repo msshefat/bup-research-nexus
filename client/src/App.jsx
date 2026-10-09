@@ -12,6 +12,7 @@ import { Publications } from './pages/Publications';
 import { Search } from './pages/Search';
 import { Account } from './pages/Account';
 import { Requests } from './pages/Requests';
+import { Running } from './pages/Running';
 import { Notifications } from './pages/Notifications';
 import { Admin } from './pages/Admin';
 
@@ -35,6 +36,7 @@ export default function App() {
             <Route path="search" element={<Search />} />
             <Route path="account" element={<Account />} />
             <Route path="requests" element={<Requests />} />
+            <Route path="running" element={<Running />} />
             <Route path="notifications" element={<Notifications />} />
             <Route path="admin" element={<Admin />} />
             <Route path="*" element={<Missing />} />

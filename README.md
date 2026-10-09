@@ -39,6 +39,7 @@ Every sample account uses the password `Nexus@2026`.
 | --- | --- | --- |
 | Student | ayesha.karim@bup.edu.bd | Send a thesis request |
 | Faculty | sharmeen.seema@bup.edu.bd | Accept the request already waiting |
+| Faculty | farzana.haque@bup.edu.bd | Running mentoring, with a saved message record |
 | Alumni | mehzabin.chowdhury@bup.edu.bd | Profile, papers, mentoring flag |
 | Admin | admin@bup.edu.bd | Verify Rafiul Islam and the hidden thesis |
 
@@ -49,7 +50,8 @@ The sign-in page can fill these in. Sample profiles are illustrative course data
 - Register and sign in as a student, faculty member, or alumnus. Passwords are hashed. Access is role based.
 - Search and filter faculty, alumni, thesis calls, projects, and papers by keyword, department, research area, and status.
 - Read a research profile, publications, supervised work, and open calls.
-- Send a mentorship, thesis, or collaboration request, then accept or decline it.
+- Send a mentorship, thesis, or collaboration request, then accept or decline it. An acceptance can include a message, and both people keep writing on that record.
+- Faculty and alumni open Running opportunities and mentoring to see active calls and accepted mentoring.
 - Get an in-app alert when a request is sent, answered, or a profile is verified.
 - Faculty post and close thesis calls and add publications after verification.
 - Administrators verify or deactivate accounts, add or hide thesis records, remove papers, and see basic counts.
@@ -71,7 +73,9 @@ The sign-in page can fill these in. Sample profiles are illustrative course data
 | GET | `/api/publications` | Public |
 | POST, PUT, DELETE | `/api/publications/:id` | Owner faculty or alumni, or admin |
 | GET, POST | `/api/requests` | Signed in. Only students create requests |
-| PATCH | `/api/requests/:id` | Recipient accepts or declines |
+| PATCH | `/api/requests/:id` | Recipient accepts or declines. A note on accept is the first message |
+| GET, POST | `/api/requests/:id/messages` | The two people on an accepted request |
+| GET | `/api/running` | Faculty or alumni. Open and filled calls, plus accepted mentoring |
 | GET | `/api/notifications` | Signed in |
 | PATCH | `/api/notifications/read-all` | Signed in |
 | PATCH | `/api/notifications/:id/read` | Signed in |

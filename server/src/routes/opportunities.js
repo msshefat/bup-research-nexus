@@ -4,6 +4,7 @@ import { DEPARTMENTS, OPPORTUNITY_STATUSES } from '../constants.js';
 import { HttpError, asString, asTags, asyncHandler, requireFields, rx } from '../http.js';
 import { optionalAuth, requireAuth, requireRole } from '../middleware/auth.js';
 import { Request } from '../models/Request.js';
+import { Message } from '../models/Message.js';
 
 const router = Router();
 
@@ -152,6 +153,8 @@ router.delete(
     if (!item) throw new HttpError(404, 'Opportunity not found.');
     const owns = String(item.supervisor) === String(req.user.id);
     if (!owns && req.user.role !== 'admin') throw new HttpError(403, 'You can only remove your own opportunities.');
+    const applications = await Request.find({ opportunity: item.id }).select('_id');
+    await Message.deleteMany({ request: { $in: applications.map((row) => row._id) } });
     await Request.deleteMany({ opportunity: item.id });
     await item.deleteOne();
     res.json({ message: 'Opportunity removed.' });

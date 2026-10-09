@@ -4,6 +4,7 @@ import { Publication } from './models/Publication.js';
 import { Opportunity } from './models/Opportunity.js';
 import { Project } from './models/Project.js';
 import { Request } from './models/Request.js';
+import { Message } from './models/Message.js';
 import { Notification } from './models/Notification.js';
 
 const DEMO_PASSWORD = 'Nexus@2026';
@@ -22,6 +23,7 @@ export async function seed() {
     Opportunity.deleteMany({}),
     Project.deleteMany({}),
     Request.deleteMany({}),
+    Message.deleteMany({}),
     Notification.deleteMany({}),
   ]);
 
@@ -575,7 +577,7 @@ export async function seed() {
   const farzana = by['farzana.haque@bup.edu.bd'];
   const mehzabin = by['mehzabin.chowdhury@bup.edu.bd'];
 
-  await Request.create([
+  const [, acceptedMentoring] = await Request.create([
     {
       from: ayesha.id,
       to: seema.id,
@@ -603,6 +605,23 @@ export async function seed() {
       topic: 'How you sliced errors in the food-review thesis',
       message:
         'Could you walk me through the error slices from your thesis before I email a supervisor? I want to copy the habit, not the dataset.',
+    },
+  ]);
+
+  await Message.create([
+    {
+      request: acceptedMentoring.id,
+      from: farzana.id,
+      body: 'Come to the reading group on Sunday. Bring a page you think is a lookalike and we will label it together.',
+      createdAt: new Date('2026-09-14T04:00:00.000Z'),
+      updatedAt: new Date('2026-09-14T04:00:00.000Z'),
+    },
+    {
+      request: acceptedMentoring.id,
+      from: farhan.id,
+      body: 'I will bring a public lookalike page. I will not store login forms, only the visible page text.',
+      createdAt: new Date('2026-09-15T09:20:00.000Z'),
+      updatedAt: new Date('2026-09-15T09:20:00.000Z'),
     },
   ]);
 

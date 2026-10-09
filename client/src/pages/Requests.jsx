@@ -4,6 +4,7 @@ import { api } from '../api';
 import { useAuth } from '../auth';
 import { timeAgo } from '../constants';
 import { Guard } from '../components/Layout';
+import { Thread } from '../components/Thread';
 import { Badge, Banner, Button, Empty, ErrorNote, Loading, controlClass, statusTone } from '../components/ui';
 
 export function Requests() {
@@ -26,7 +27,7 @@ function RequestCard({ item, box, onRespond }) {
       <h2 className="mt-3 font-serif text-2xl">{item.topic}</h2>
       {item.opportunity?.title ? <p className="mt-1 text-sm text-gold">Opportunity: {item.opportunity.title}</p> : null}
       <p className="mt-2 text-sm leading-6 text-mist">{item.message}</p>
-      {item.responseNote ? <p className="mt-3 text-sm text-paper">Reply: {item.responseNote}</p> : null}
+      {item.status !== 'accepted' && item.responseNote ? <p className="mt-3 text-sm text-paper">Reply: {item.responseNote}</p> : null}
       {other ? (
         <Link to={`/people/${other._id}`} className="mt-3 inline-block text-sm text-gold">
           {other.name} · {other.role}
@@ -34,13 +35,15 @@ function RequestCard({ item, box, onRespond }) {
       ) : null}
       {box === 'inbox' && item.status === 'pending' ? (
         <div className="mt-4 space-y-2">
-          <textarea className={controlClass} placeholder="Optional note to the student" value={note} onChange={(event) => setNote(event.target.value)} />
+          <textarea className={controlClass} placeholder="Message saved if you accept" value={note} onChange={(event) => setNote(event.target.value)} />
+          <p className="text-xs text-mist">Accept keeps this message on the record. Decline stores it as a one-time reply.</p>
           <div className="flex gap-2">
             <Button onClick={() => onRespond(item._id, 'accepted', note)}>Accept</Button>
             <Button variant="danger" onClick={() => onRespond(item._id, 'rejected', note)}>Decline</Button>
           </div>
         </div>
       ) : null}
+      {item.status === 'accepted' ? <Thread requestId={item._id} /> : null}
     </article>
   );
 }

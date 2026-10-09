@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth';
 import { AREAS } from '../constants';
@@ -76,6 +77,11 @@ function AccountForm() {
         <p className="text-xs uppercase tracking-[0.18em] text-gold">{user.role}</p>
         <h1 className="mt-2 font-serif text-5xl">Your research profile</h1>
         <p className="mt-2 text-sm text-mist">{user.email}</p>
+        {user.role === 'faculty' || user.role === 'alumni' ? (
+          <Link to="/running" className="mt-4 inline-flex rounded-full bg-gold px-4 py-2 text-sm font-semibold text-on-gold">
+            Running opportunities and mentoring
+          </Link>
+        ) : null}
       </div>
       {user.role !== 'student' && user.role !== 'admin' && !user.verified ? (
         <Banner>An administrator still needs to verify this profile. You can edit it now. Publications, thesis calls, and student requests open after verification.</Banner>

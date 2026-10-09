@@ -10,6 +10,7 @@ import publicationRoutes from './routes/publications.js';
 import opportunityRoutes from './routes/opportunities.js';
 import projectRoutes from './routes/projects.js';
 import requestRoutes from './routes/requests.js';
+import runningRoutes from './routes/running.js';
 import notificationRoutes from './routes/notifications.js';
 import adminRoutes from './routes/admin.js';
 import catalogRoutes from './routes/catalog.js';
@@ -32,6 +33,7 @@ export function createApp() {
   app.use('/api/opportunities', opportunityRoutes);
   app.use('/api/projects', projectRoutes);
   app.use('/api/requests', requestRoutes);
+  app.use('/api/running', runningRoutes);
   app.use('/api/notifications', notificationRoutes);
   app.use('/api/admin', adminRoutes);
   app.use('/api', catalogRoutes);

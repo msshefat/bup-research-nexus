@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { Request } from '../models/Request.js';
+import { Message } from '../models/Message.js';
 import { User } from '../models/User.js';
 import { Opportunity } from '../models/Opportunity.js';
 import { REQUEST_KINDS } from '../constants.js';
@@ -103,9 +104,13 @@ router.patch(
     if (!['accepted', 'rejected'].includes(status)) {
       throw new HttpError(400, 'Respond with accepted or rejected.');
     }
-    if (req.body.responseNote !== undefined) item.responseNote = asString(req.body.responseNote, 500);
+    const note = req.body.responseNote !== undefined ? asString(req.body.responseNote, 1000) : '';
+    if (req.body.responseNote !== undefined) item.responseNote = note;
     item.status = status;
     await item.save();
+    if (status === 'accepted' && note) {
+      await Message.create({ request: item.id, from: req.user.id, body: note });
+    }
     await notify(item.from.id || item.from, {
       title: `${req.user.name} ${status} your request`,
       body: item.topic,
@@ -113,6 +118,54 @@ router.patch(
       kind: 'request',
     });
     res.json(item);
+  }),
+);
+
+function partyIds(item) {
+  return [String(item.from?._id || item.from), String(item.to?._id || item.to)];
+}
+
+async function loadPartyRequest(req) {
+  const item = await Request.findById(req.params.id);
+  if (!item) throw new HttpError(404, 'Request not found.');
+  if (!partyIds(item).includes(String(req.user.id))) {
+    throw new HttpError(403, 'Only the two people on this request can use this record.');
+  }
+  return item;
+}
+
+router.get(
+  '/:id/messages',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const item = await loadPartyRequest(req);
+    const messages = await Message.find({ request: item.id })
+      .sort({ createdAt: 1 })
+      .limit(200)
+      .populate('from', 'name role');
+    res.json(messages);
+  }),
+);
+
+router.post(
+  '/:id/messages',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const item = await loadPartyRequest(req);
+    if (item.status !== 'accepted') {
+      throw new HttpError(403, 'Messages start after the request is accepted.');
+    }
+    const body = asString(req.body.body, 1000);
+    if (!body) throw new HttpError(400, 'Write a message.');
+    const message = await Message.create({ request: item.id, from: req.user.id, body });
+    const recipient = String(item.from) === String(req.user.id) ? item.to : item.from;
+    await notify(recipient, {
+      title: `${req.user.name} sent a message`,
+      body: item.topic,
+      link: String(recipient) === String(item.to) ? '/running' : '/requests',
+      kind: 'request',
+    });
+    res.status(201).json(await message.populate('from', 'name role'));
   }),
 );
 
