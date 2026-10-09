@@ -6,7 +6,7 @@ export function Avatar({ name, size = 'md' }) {
   const dimension = size === 'lg' ? 'h-16 w-16 text-xl' : 'h-11 w-11 text-sm';
   return (
     <span
-      className={`grid ${dimension} shrink-0 place-items-center rounded-2xl font-serif font-semibold text-ink`}
+      className={`grid ${dimension} shrink-0 place-items-center rounded-2xl font-serif font-semibold text-stamp`}
       style={{ background: tone(name) }}
       aria-hidden="true"
     >

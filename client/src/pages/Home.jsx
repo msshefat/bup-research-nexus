@@ -57,7 +57,7 @@ export function Home() {
               placeholder="Try cybersecurity, Bangla speech, or a faculty name"
               className="w-full rounded-full border border-line bg-panel px-5 py-3 text-sm outline-none focus:border-gold"
             />
-            <button type="submit" className="rounded-full bg-gold px-5 py-3 text-sm font-semibold text-ink">
+            <button type="submit" className="rounded-full bg-gold px-5 py-3 text-sm font-semibold text-on-gold">
               Search
             </button>
           </form>

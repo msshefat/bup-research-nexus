@@ -4,6 +4,7 @@ import { Opportunity } from '../models/Opportunity.js';
 import { Project } from '../models/Project.js';
 import { Publication } from '../models/Publication.js';
 import { Request } from '../models/Request.js';
+import { Notification } from '../models/Notification.js';
 import { asyncHandler, HttpError } from '../http.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { notify } from '../notify.js';
@@ -81,6 +82,26 @@ router.patch(
       });
     }
     res.json(user);
+  }),
+);
+
+router.delete(
+  '/users/:id',
+  asyncHandler(async (req, res) => {
+    if (String(req.params.id) === String(req.user.id)) {
+      throw new HttpError(400, 'You cannot delete your own account.');
+    }
+    const user = await User.findById(req.params.id);
+    if (!user) throw new HttpError(404, 'User not found.');
+    await Promise.all([
+      Publication.deleteMany({ owner: user.id }),
+      Opportunity.deleteMany({ supervisor: user.id }),
+      Request.deleteMany({ $or: [{ from: user.id }, { to: user.id }] }),
+      Notification.deleteMany({ user: user.id }),
+      Project.updateMany({ supervisor: user.id }, { $set: { supervisor: null } }),
+    ]);
+    await user.deleteOne();
+    res.json({ message: 'Account deleted.' });
   }),
 );
 

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../api';
+import { useAuth } from '../auth';
 import { AREAS, formatDate } from '../constants';
 import { AreaTags, OpportunityCard } from '../components/Cards';
 import { RequestDialog } from '../components/RequestDialog';
-import { Badge, Empty, ErrorNote, Loading, controlClass, statusTone } from '../components/ui';
+import { Badge, Button, Empty, ErrorNote, Loading, controlClass, statusTone } from '../components/ui';
 
 export function Opportunities() {
   const [params, setParams] = useSearchParams();
@@ -76,7 +77,7 @@ export function Opportunities() {
           </select>
         </label>
         <div className="flex items-end gap-2 md:col-span-2 md:justify-end">
-          <button type="submit" className="rounded-full bg-gold px-4 py-2 text-sm font-semibold text-ink">
+          <button type="submit" className="rounded-full bg-gold px-4 py-2 text-sm font-semibold text-on-gold">
             Apply
           </button>
           <button type="button" className="rounded-full border border-line px-4 py-2 text-sm" onClick={() => { setDraft(''); setParams({}); }}>
@@ -102,8 +103,12 @@ export function Opportunities() {
 
 export function OpportunityDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [state, setState] = useState({ loading: true, error: '', data: null });
   const [asking, setAsking] = useState(false);
+  const [notes, setNotes] = useState({});
+  const [actionError, setActionError] = useState('');
 
   function load() {
     api(`/api/opportunities/${id}`)
@@ -120,6 +125,29 @@ export function OpportunityDetail() {
   if (state.error) return <ErrorNote message={state.error} onRetry={load} />;
   const item = state.data;
   const supervisor = item.supervisor;
+  const isOwner = Boolean(user && supervisor && String(user._id) === String(supervisor._id));
+  const owns = Boolean(user && supervisor && (user.role === 'admin' || isOwner));
+
+  async function setStatus(status) {
+    setActionError('');
+    try {
+      await api(`/api/opportunities/${item._id}`, { method: 'PUT', body: { status } });
+      load();
+    } catch (error) {
+      setActionError(error.message);
+    }
+  }
+
+  async function respond(requestId, status) {
+    setActionError('');
+    try {
+      await api(`/api/requests/${requestId}`, { method: 'PATCH', body: { status, responseNote: notes[requestId] || '' } });
+      setNotes((current) => ({ ...current, [requestId]: '' }));
+      load();
+    } catch (error) {
+      setActionError(error.message);
+    }
+  }
 
   return (
     <article className="mx-auto max-w-3xl">
@@ -153,21 +181,73 @@ export function OpportunityDetail() {
           <p className="text-sm text-mist">
             {supervisor.designation} · {supervisor.department}
           </p>
-          {item.status === 'open' && supervisor.verified ? (
-            <button type="button" className="mt-4 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-ink" onClick={() => setAsking(true)}>
-              Request this thesis
+          {owns ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button variant="ghost" onClick={() => setStatus(item.status === 'closed' ? 'open' : 'closed')}>
+                {item.status === 'closed' ? 'Open again' : 'Close opportunity'}
+              </Button>
+              <Button
+                variant="danger"
+                onClick={async () => {
+                  if (!window.confirm('Delete this opportunity?')) return;
+                  await api(`/api/opportunities/${item._id}`, { method: 'DELETE' });
+                  navigate('/opportunities');
+                }}
+              >
+                Delete
+              </Button>
+            </div>
+          ) : item.myApplication ? (
+            <p className="mt-4 text-sm text-paper">
+              Your application is {item.myApplication.status}.
+              {item.myApplication.responseNote ? ` Reply: ${item.myApplication.responseNote}` : ''}
+            </p>
+          ) : item.status === 'open' && supervisor.verified ? (
+            <button type="button" className="mt-4 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-on-gold" onClick={() => setAsking(true)}>
+              Apply
             </button>
           ) : (
             <p className="mt-3 text-sm text-mist">
               {item.status !== 'open'
-                ? 'This call is not open to new students.'
+                ? 'This opportunity is closed to new applications.'
                 : 'This profile is still waiting for administrator verification.'}
             </p>
           )}
         </div>
       ) : null}
+      {actionError ? <p className="mt-4 text-sm text-rose">{actionError}</p> : null}
+      {owns && item.applications ? (
+        <section className="mt-8">
+          <h2 className="font-serif text-3xl">Applications</h2>
+          {item.applications.length === 0 ? (
+            <p className="mt-3 text-sm text-mist">No one has applied yet.</p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {item.applications.map((application) => (
+                <li key={application._id} className="rounded-2xl border border-line bg-panel p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-medium">{application.from?.name}</p>
+                    <Badge tone={statusTone(application.status)}>{application.status}</Badge>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-mist">{application.message}</p>
+                  {application.responseNote ? <p className="mt-2 text-sm">Reply: {application.responseNote}</p> : null}
+                  {isOwner && application.status === 'pending' ? (
+                    <div className="mt-3 space-y-2">
+                      <textarea className={controlClass} placeholder="Optional note" value={notes[application._id] || ''} onChange={(event) => setNotes((current) => ({ ...current, [application._id]: event.target.value }))} />
+                      <div className="flex gap-2">
+                        <Button onClick={() => respond(application._id, 'accepted')}>Accept</Button>
+                        <Button variant="danger" onClick={() => respond(application._id, 'rejected')}>Reject</Button>
+                      </div>
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ) : null}
       {asking && supervisor ? (
-        <RequestDialog person={supervisor} initialTopic={item.title} opportunityId={item._id} onClose={() => setAsking(false)} />
+        <RequestDialog person={supervisor} initialTopic={item.title} opportunityId={item._id} onClose={() => { setAsking(false); load(); }} />
       ) : null}
     </article>
   );

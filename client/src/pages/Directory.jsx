@@ -89,7 +89,7 @@ export function Directory() {
           Only people open to mentoring
         </label>
         <div className="flex items-center gap-2 md:col-span-2 md:justify-end">
-          <button type="submit" className="rounded-full bg-gold px-4 py-2 text-sm font-semibold text-ink">
+          <button type="submit" className="rounded-full bg-gold px-4 py-2 text-sm font-semibold text-on-gold">
             Apply
           </button>
           <button

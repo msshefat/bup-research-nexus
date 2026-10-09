@@ -65,7 +65,7 @@ The sign-in page can fill these in. Sample profiles are illustrative course data
 | GET | `/api/people` | Public. Student list requires sign-in |
 | GET | `/api/people/:id` | Public, same rule for students |
 | GET | `/api/opportunities` | Public |
-| POST, PUT, DELETE | `/api/opportunities/:id` | Verified faculty, or admin for edit and delete |
+| POST, PUT, DELETE | `/api/opportunities/:id` | Verified faculty or alumni. Admin can edit and delete any call |
 | GET | `/api/projects` | Public sees verified records. Admin sees all |
 | POST, PUT, DELETE | `/api/projects/:id` | Admin |
 | GET | `/api/publications` | Public |
@@ -78,7 +78,7 @@ The sign-in page can fill these in. Sample profiles are illustrative course data
 | GET | `/api/search` | Public |
 | GET | `/api/stats` | Public |
 | GET | `/api/admin/overview` | Admin |
-| GET, PATCH | `/api/admin/users/:id` | Admin |
+| GET, PATCH, DELETE | `/api/admin/users/:id` | Admin. An admin cannot delete their own account |
 
 Send `Authorization: Bearer <token>` for protected routes.
 

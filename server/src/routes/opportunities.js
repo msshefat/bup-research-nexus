@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { Opportunity } from '../models/Opportunity.js';
 import { DEPARTMENTS, OPPORTUNITY_STATUSES } from '../constants.js';
 import { HttpError, asString, asTags, asyncHandler, requireFields, rx } from '../http.js';
-import { requireAuth, requireRole } from '../middleware/auth.js';
+import { optionalAuth, requireAuth, requireRole } from '../middleware/auth.js';
+import { Request } from '../models/Request.js';
 
 const router = Router();
 
@@ -32,23 +33,36 @@ router.get(
 
 router.get(
   '/:id',
+  optionalAuth,
   asyncHandler(async (req, res) => {
     const item = await Opportunity.findById(req.params.id).populate(
       'supervisor',
       'name department designation bio researchInterests mentoringAvailable verified office role',
     );
     if (!item) throw new HttpError(404, 'Opportunity not found.');
-    res.json(item);
+    const supervisorId = String(item.supervisor?._id || item.supervisor || '');
+    const canReview = Boolean(req.user && (req.user.role === 'admin' || String(req.user.id) === supervisorId));
+    const payload = item.toJSON();
+    payload.applications = [];
+    payload.myApplication = null;
+    if (canReview) {
+      payload.applications = await Request.find({ opportunity: item.id })
+        .sort({ createdAt: -1 })
+        .populate('from', 'name role department batch email');
+    } else if (req.user) {
+      payload.myApplication = await Request.findOne({ opportunity: item.id, from: req.user.id }).select('status topic responseNote createdAt');
+    }
+    res.json(payload);
   }),
 );
 
 router.post(
   '/',
   requireAuth,
-  requireRole('faculty'),
+  requireRole('faculty', 'alumni'),
   asyncHandler(async (req, res) => {
     if (!req.user.verified) {
-      throw new HttpError(403, 'An administrator must verify your profile before you can post a thesis call.');
+      throw new HttpError(403, 'An administrator must verify your profile before you can post an opportunity.');
     }
     const title = asString(req.body.title, 160);
     const summary = asString(req.body.summary, 280);
@@ -91,7 +105,7 @@ router.put(
     const item = await Opportunity.findById(req.params.id);
     if (!item) throw new HttpError(404, 'Opportunity not found.');
     const owns = String(item.supervisor) === String(req.user.id);
-    if (!owns && req.user.role !== 'admin') throw new HttpError(403, 'You can only edit your own thesis calls.');
+    if (!owns && req.user.role !== 'admin') throw new HttpError(403, 'You can only edit your own opportunities.');
     if (req.body.title !== undefined) item.title = asString(req.body.title, 160);
     if (req.body.summary !== undefined) item.summary = asString(req.body.summary, 280);
     if (req.body.description !== undefined) item.description = asString(req.body.description, 2000);
@@ -137,7 +151,8 @@ router.delete(
     const item = await Opportunity.findById(req.params.id);
     if (!item) throw new HttpError(404, 'Opportunity not found.');
     const owns = String(item.supervisor) === String(req.user.id);
-    if (!owns && req.user.role !== 'admin') throw new HttpError(403, 'You can only remove your own thesis calls.');
+    if (!owns && req.user.role !== 'admin') throw new HttpError(403, 'You can only remove your own opportunities.');
+    await Request.deleteMany({ opportunity: item.id });
     await item.deleteOne();
     res.json({ message: 'Opportunity removed.' });
   }),

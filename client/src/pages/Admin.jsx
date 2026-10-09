@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
+import { useAuth } from '../auth';
 import { AREAS } from '../constants';
 import { Guard } from '../components/Layout';
 import { Badge, Banner, Button, Empty, ErrorNote, Field, Loading, controlClass } from '../components/ui';
@@ -20,7 +21,7 @@ function AdminDesk() {
       <h1 className="mt-2 font-serif text-5xl">Keep the directory honest.</h1>
       <div className="mt-5 flex flex-wrap gap-2">
         {['overview', 'people', 'theses'].map((item) => (
-          <button key={item} type="button" onClick={() => setTab(item)} className={`rounded-full px-4 py-2 text-sm capitalize ${tab === item ? 'bg-gold text-ink' : 'border border-line'}`}>
+          <button key={item} type="button" onClick={() => setTab(item)} className={`rounded-full px-4 py-2 text-sm capitalize ${tab === item ? 'bg-gold text-on-gold' : 'border border-line'}`}>
             {item}
           </button>
         ))}
@@ -117,6 +118,7 @@ function Overview() {
 }
 
 function PeopleModeration() {
+  const { user } = useAuth();
   const [state, setState] = useState({ loading: true, error: '', data: [] });
   const [message, setMessage] = useState('');
 
@@ -157,16 +159,38 @@ function PeopleModeration() {
               <Badge tone={person.active ? 'mist' : 'rose'}>{person.active ? 'Active' : 'Inactive'}</Badge>
             </div>
           </div>
-          {person.role !== 'admin' ? (
-            <div className="flex gap-2">
-              <Button variant="ghost" onClick={() => patch(person._id, { verified: !person.verified })}>
-                {person.verified ? 'Unverify' : 'Verify'}
-              </Button>
-              <Button variant="danger" onClick={() => patch(person._id, { active: !person.active })}>
-                {person.active ? 'Deactivate' : 'Restore'}
+          {String(person._id) !== String(user?._id) ? (
+            <div className="flex flex-wrap gap-2">
+              {person.role !== 'admin' ? (
+                <>
+                  <Button variant="ghost" onClick={() => patch(person._id, { verified: !person.verified })}>
+                    {person.verified ? 'Unverify' : 'Verify'}
+                  </Button>
+                  <Button variant="ghost" onClick={() => patch(person._id, { active: !person.active })}>
+                    {person.active ? 'Deactivate' : 'Restore'}
+                  </Button>
+                </>
+              ) : null}
+              <Button
+                variant="danger"
+                onClick={async () => {
+                  if (!window.confirm(`Delete ${person.name}'s account? This removes their opportunities and cannot be undone.`)) return;
+                  setMessage('');
+                  try {
+                    await api(`/api/admin/users/${person._id}`, { method: 'DELETE' });
+                    setMessage('Account deleted.');
+                    load();
+                  } catch (error) {
+                    setMessage(error.message);
+                  }
+                }}
+              >
+                Delete account
               </Button>
             </div>
-          ) : null}
+          ) : (
+            <Badge tone="mist">Your account</Badge>
+          )}
         </article>
       ))}
     </div>

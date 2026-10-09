@@ -14,6 +14,23 @@
   --color-teal: #3dbea5;
   --color-rose: #e07a7a;
   --color-blue: #8eb4ff;
+  --color-on-gold: #1a1408;
+  --color-stamp: #1a1408;
+}
+
+[data-theme='light'] {
+  --color-ink: #f4efe4;
+  --color-panel: #fffdf8;
+  --color-panel-2: #f3ecdf;
+  --color-line: #e2d5bf;
+  --color-gold: #8d5e0b;
+  --color-gold-2: #6f4708;
+  --color-mist: #5c6572;
+  --color-paper: #1b2430;
+  --color-teal: #0f766e;
+  --color-rose: #b42318;
+  --color-blue: #1d4ed8;
+  --color-on-gold: #fff8ea;
 }
 
 html {
@@ -55,4 +72,22 @@ input,
 textarea,
 select {
   color-scheme: dark;
+}
+
+[data-theme='light'] body {
+  background:
+    radial-gradient(1100px 480px at 8% -10%, rgba(141, 94, 11, 0.12), transparent 55%),
+    radial-gradient(900px 420px at 100% 0%, rgba(29, 78, 216, 0.08), transparent 46%),
+    var(--color-ink);
+}
+
+[data-theme='light'] body::before {
+  background-image: linear-gradient(rgba(27, 36, 48, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(27, 36, 48, 0.045) 1px, transparent 1px);
+}
+
+[data-theme='light'] input,
+[data-theme='light'] textarea,
+[data-theme='light'] select {
+  color-scheme: light;
 }

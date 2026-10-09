@@ -10,6 +10,7 @@ const requestSchema = new mongoose.Schema(
     kind: { type: String, enum: REQUEST_KINDS, default: 'mentorship' },
     status: { type: String, enum: REQUEST_STATUSES, default: 'pending' },
     responseNote: { type: String, default: '' },
+    opportunity: { type: mongoose.Schema.Types.ObjectId, ref: 'Opportunity', default: null },
   },
   { timestamps: true },
 );

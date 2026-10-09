@@ -24,6 +24,7 @@ function RequestCard({ item, box, onRespond }) {
         <span className="text-xs text-mist">{timeAgo(item.createdAt)} · {item.kind}</span>
       </div>
       <h2 className="mt-3 font-serif text-2xl">{item.topic}</h2>
+      {item.opportunity?.title ? <p className="mt-1 text-sm text-gold">Opportunity: {item.opportunity.title}</p> : null}
       <p className="mt-2 text-sm leading-6 text-mist">{item.message}</p>
       {item.responseNote ? <p className="mt-3 text-sm text-paper">Reply: {item.responseNote}</p> : null}
       {other ? (
@@ -77,11 +78,11 @@ function RequestDesk() {
       <h1 className="mt-2 font-serif text-5xl">{box === 'sent' ? 'Requests you sent' : 'Requests waiting on you'}</h1>
       <div className="mt-4 flex gap-2">
         {user.role !== 'student' ? (
-          <button type="button" className={`rounded-full px-4 py-2 text-sm ${box === 'inbox' ? 'bg-gold text-ink' : 'border border-line'}`} onClick={() => setBox('inbox')}>
+          <button type="button" className={`rounded-full px-4 py-2 text-sm ${box === 'inbox' ? 'bg-gold text-on-gold' : 'border border-line'}`} onClick={() => setBox('inbox')}>
             Inbox
           </button>
         ) : null}
-        <button type="button" className={`rounded-full px-4 py-2 text-sm ${box === 'sent' ? 'bg-gold text-ink' : 'border border-line'}`} onClick={() => setBox('sent')}>
+        <button type="button" className={`rounded-full px-4 py-2 text-sm ${box === 'sent' ? 'bg-gold text-on-gold' : 'border border-line'}`} onClick={() => setBox('sent')}>
           Sent
         </button>
       </div>

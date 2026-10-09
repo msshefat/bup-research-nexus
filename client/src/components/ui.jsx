@@ -1,6 +1,6 @@
 export function Button({ variant = 'primary', className = '', type = 'button', ...props }) {
   const styles = {
-    primary: 'bg-gold text-ink hover:bg-gold-2',
+    primary: 'bg-gold text-on-gold hover:bg-gold-2',
     ghost: 'border border-line bg-panel/60 text-paper hover:border-gold/60',
     danger: 'border border-rose/40 text-rose hover:bg-rose/10',
     quiet: 'text-mist hover:text-paper',

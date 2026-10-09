@@ -444,6 +444,18 @@ export async function seed() {
       requirements: 'Interest in search and evaluation. Bring one research question you wish the archive could answer.',
       deadline: new Date('2026-12-20'),
     }),
+    call(by['mehzabin.chowdhury@bup.edu.bd'], {
+      title: 'How to scope a Bangla text thesis',
+      summary: 'An alumni office hour for students who want a finishable language project, not a giant model.',
+      description:
+        'Mehzabin will read a one-page plan and say what to cut. This is a mentoring seat from an alumnus, not a faculty thesis allocation.',
+      researchAreas: ['Natural Language Processing', 'Machine Learning'],
+      department: 'CSE',
+      slots: 2,
+      status: 'open',
+      requirements: 'A one-page plan and one dataset you could actually label.',
+      deadline: new Date('2026-12-18'),
+    }),
     call(by['nusrat.jahan@bup.edu.bd'], {
       title: 'Classroom air-quality node',
       summary: 'Closed. The sensor build was not repeated after the pilot semester.',

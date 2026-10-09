@@ -46,7 +46,7 @@ export function Profile() {
         </div>
         {person.office ? <p className="mt-4 text-sm text-mist">Office: {person.office}</p> : null}
         {canAsk ? (
-          <button type="button" className="mt-5 w-full rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-ink" onClick={() => setAsking(true)}>
+          <button type="button" className="mt-5 w-full rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-on-gold" onClick={() => setAsking(true)}>
             Request guidance
           </button>
         ) : (

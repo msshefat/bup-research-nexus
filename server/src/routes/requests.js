@@ -20,7 +20,8 @@ router.get(
       .sort({ createdAt: -1 })
       .limit(100)
       .populate('from', personCard)
-      .populate('to', personCard);
+      .populate('to', personCard)
+      .populate('opportunity', 'title status');
     res.json(items);
   }),
 );
@@ -45,32 +46,39 @@ router.post(
       throw new HttpError(404, 'That mentor profile is not available.');
     }
     if (!recipient.verified) throw new HttpError(403, 'This profile is still waiting for verification.');
-    let openCall = false;
+    let linkedOpportunity = null;
     const opportunityId = asString(req.body.opportunity, 30);
     if (opportunityId) {
-      const opportunity = await Opportunity.findById(opportunityId);
-      openCall = Boolean(
-        opportunity && opportunity.status === 'open' && String(opportunity.supervisor) === String(recipient.id),
-      );
-    }
-    if (!recipient.mentoringAvailable && !openCall) {
+      linkedOpportunity = await Opportunity.findById(opportunityId);
+      if (!linkedOpportunity || String(linkedOpportunity.supervisor) !== String(recipient.id)) {
+        throw new HttpError(404, 'That opportunity is not available.');
+      }
+      if (linkedOpportunity.status !== 'open') {
+        throw new HttpError(403, 'This opportunity is closed to new applications.');
+      }
+    } else if (!recipient.mentoringAvailable) {
       throw new HttpError(403, 'This person is not currently available for new requests.');
     }
     if (String(recipient.id) === String(req.user.id)) throw new HttpError(400, 'You cannot request yourself.');
-    const pending = await Request.findOne({ from: req.user.id, to: recipient.id, status: 'pending' });
-    if (pending) throw new HttpError(409, 'You already have a pending request with this person.');
+    const pending = linkedOpportunity
+      ? await Request.findOne({ from: req.user.id, opportunity: linkedOpportunity.id, status: 'pending' })
+      : await Request.findOne({ from: req.user.id, to: recipient.id, opportunity: null, status: 'pending' });
+    if (pending) {
+      throw new HttpError(409, linkedOpportunity ? 'You already applied to this opportunity.' : 'You already have a pending request with this person.');
+    }
 
     const item = await Request.create({
       from: req.user.id,
       to: recipient.id,
       topic,
       message,
-      kind,
+      kind: linkedOpportunity ? 'thesis' : kind,
+      opportunity: linkedOpportunity?.id || null,
     });
     await notify(recipient.id, {
-      title: `${req.user.name} sent a ${kind} request`,
+      title: linkedOpportunity ? `${req.user.name} applied to ${linkedOpportunity.title}` : `${req.user.name} sent a ${kind} request`,
       body: topic,
-      link: '/requests',
+      link: linkedOpportunity ? `/opportunities/${linkedOpportunity.id}` : '/requests',
       kind: 'request',
     });
     const populated = await item.populate([

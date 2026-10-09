@@ -172,7 +172,7 @@ function AccountForm() {
       </form>
 
       {['faculty', 'alumni'].includes(user.role) ? <PublicationDesk user={user} /> : null}
-      {user.role === 'faculty' ? <OpportunityDesk user={user} /> : null}
+      {['faculty', 'alumni'].includes(user.role) ? <OpportunityDesk user={user} /> : null}
     </div>
   );
 }
@@ -290,7 +290,7 @@ function OpportunityDesk({ user }) {
 
   return (
     <section className="space-y-4">
-      <h2 className="font-serif text-3xl">Thesis calls you posted</h2>
+      <h2 className="font-serif text-3xl">Opportunities you posted</h2>
       {error ? <Banner tone="rose">{error}</Banner> : null}
       <form
         className="grid gap-3 rounded-3xl border border-line bg-panel p-5"
@@ -336,7 +336,7 @@ function OpportunityDesk({ user }) {
           </Field>
         </div>
         <AreaPicker selected={form.researchAreas} onChange={(researchAreas) => setForm({ ...form, researchAreas })} />
-        <Button type="submit">Post thesis call</Button>
+        <Button type="submit">Post opportunity</Button>
       </form>
       <ul className="space-y-3">
         {items.map((item) => (
@@ -346,27 +346,25 @@ function OpportunityDesk({ user }) {
               <Badge tone={statusTone(item.status)}>{item.status}</Badge>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              <select
-                className={`${controlClass} max-w-40`}
-                value={item.status}
-                onChange={async (event) => {
-                  await api(`/api/opportunities/${item._id}`, { method: 'PUT', body: { status: event.target.value } });
+              <Button
+                variant="ghost"
+                onClick={async () => {
+                  const next = item.status === 'closed' ? 'open' : 'closed';
+                  await api(`/api/opportunities/${item._id}`, { method: 'PUT', body: { status: next } });
                   load();
                 }}
               >
-                <option value="open">open</option>
-                <option value="filled">filled</option>
-                <option value="closed">closed</option>
-              </select>
+                {item.status === 'closed' ? 'Open again' : 'Close'}
+              </Button>
               <Button
                 variant="danger"
                 onClick={async () => {
-                  if (!window.confirm('Remove this thesis call?')) return;
+                  if (!window.confirm('Delete this opportunity and its applications?')) return;
                   await api(`/api/opportunities/${item._id}`, { method: 'DELETE' });
                   load();
                 }}
               >
-                Remove
+                Delete
               </Button>
             </div>
           </li>

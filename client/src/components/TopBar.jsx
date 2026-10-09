@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth';
 import { initials, tone } from '../constants';
+import { useTheme } from '../theme';
 
 const links = [
   { to: '/people?role=faculty', label: 'Faculty', match: 'faculty' },
@@ -18,6 +19,7 @@ function linkClass(active) {
 
 export function TopBar() {
   const { user, logout } = useAuth();
+  const { theme, toggle } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const here = `${location.pathname}${location.search}`;
@@ -64,12 +66,12 @@ export function TopBar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-gold/20 bg-ink/85 backdrop-blur-md">
-      <a href="#content" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-full focus:bg-gold focus:px-3 focus:py-1 focus:text-ink">
+      <a href="#content" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-full focus:bg-gold focus:px-3 focus:py-1 focus:text-on-gold">
         Skip to content
       </a>
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
         <Link to="/" className="flex shrink-0 items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center rounded-xl border border-gold/50 bg-gold font-serif text-lg text-ink">N</span>
+          <span className="grid h-9 w-9 place-items-center rounded-xl border border-gold/50 bg-gold font-serif text-lg text-on-gold">N</span>
           <span className="leading-tight">
             <span className="block text-sm font-semibold tracking-wide text-paper">Research Nexus</span>
             <span className="block text-[11px] uppercase tracking-[0.14em] text-mist">BUP · CSE & ICT</span>
@@ -97,12 +99,20 @@ export function TopBar() {
           />
         </form>
 
+        <button
+          type="button"
+          onClick={toggle}
+          className="hidden rounded-full border border-line px-3 py-1.5 text-sm text-paper sm:inline-flex"
+          aria-pressed={theme === 'light'}
+        >
+          {theme === 'dark' ? 'Light' : 'Dark'}
+        </button>
         {user ? (
           <div className="hidden items-center gap-2 sm:flex">
             <Link to="/notifications" className="relative rounded-full border border-line px-3 py-1.5 text-sm text-mist hover:text-paper" aria-label="Notifications">
               Alerts
               {unread > 0 ? (
-                <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gold px-1 text-[10px] font-bold text-ink">
+                <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gold px-1 text-[10px] font-bold text-on-gold">
                   {unread}
                 </span>
               ) : null}
@@ -114,7 +124,7 @@ export function TopBar() {
                 onClick={() => setMenuHere(menu ? '' : here)}
                 aria-expanded={menu}
               >
-                <span className="grid h-7 w-7 place-items-center rounded-full text-xs font-semibold text-ink" style={{ background: tone(user.name) }}>
+                <span className="grid h-7 w-7 place-items-center rounded-full text-xs font-semibold text-stamp" style={{ background: tone(user.name) }}>
                   {initials(user.name)}
                 </span>
                 <span className="max-w-28 truncate text-paper">{user.name.split(' ')[0]}</span>
@@ -122,20 +132,20 @@ export function TopBar() {
               {menu ? (
                 <div className="absolute right-0 mt-2 w-52 rounded-2xl border border-line bg-panel p-2 shadow-xl">
                   <p className="px-3 py-2 text-xs uppercase tracking-wider text-mist">{user.role}</p>
-                  <Link className="block rounded-xl px-3 py-2 text-sm hover:bg-white/5" to="/account">
+                  <Link className="block rounded-xl px-3 py-2 text-sm hover:bg-panel-2" to="/account">
                     My profile
                   </Link>
-                  <Link className="block rounded-xl px-3 py-2 text-sm hover:bg-white/5" to="/requests">
+                  <Link className="block rounded-xl px-3 py-2 text-sm hover:bg-panel-2" to="/requests">
                     Requests
                   </Link>
                   {user.role === 'admin' ? (
-                    <Link className="block rounded-xl px-3 py-2 text-sm hover:bg-white/5" to="/admin">
+                    <Link className="block rounded-xl px-3 py-2 text-sm hover:bg-panel-2" to="/admin">
                       Administration
                     </Link>
                   ) : null}
                   <button
                     type="button"
-                    className="block w-full rounded-xl px-3 py-2 text-left text-sm text-rose hover:bg-white/5"
+                    className="block w-full rounded-xl px-3 py-2 text-left text-sm text-rose hover:bg-panel-2"
                     onClick={() => {
                       logout();
                       navigate('/');
@@ -152,7 +162,7 @@ export function TopBar() {
             <Link to="/login" className="rounded-full px-3 py-1.5 text-sm text-mist hover:text-paper">
               Sign in
             </Link>
-            <Link to="/register" className="rounded-full bg-gold px-3 py-1.5 text-sm font-semibold text-ink">
+            <Link to="/register" className="rounded-full bg-gold px-3 py-1.5 text-sm font-semibold text-on-gold">
               Join
             </Link>
           </div>
@@ -179,6 +189,9 @@ export function TopBar() {
             />
           </form>
           <div className="flex flex-col gap-1">
+            <button type="button" onClick={toggle} className="rounded-full px-3 py-1.5 text-left text-sm text-paper">
+              {theme === 'dark' ? 'Light theme' : 'Dark theme'}
+            </button>
             {links.map((link) => (
               <NavLink key={link.label} to={link.to} className={linkClass(isActive(link))}>
                 {link.label}

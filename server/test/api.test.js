@@ -151,6 +151,117 @@ test('unverified faculty cannot post a thesis call until an admin verifies them'
   assert.ok(admin.id);
 });
 
+test('alumni can post an opportunity, review an application, then close and delete it', async () => {
+  const alumni = await register({
+    name: 'Alumni Mentor',
+    email: 'alumni.mentor@bup.edu.bd',
+    password: 'Alumni@2026',
+    role: 'alumni',
+    department: 'CSE',
+    organization: 'Research engineer',
+  });
+  assert.equal(alumni.status, 201);
+  const adminLogin = await request(app).post('/api/auth/login').send({
+    email: 'test.admin@bup.edu.bd',
+    password: 'Admin@2026',
+  });
+  const verified = await request(app)
+    .patch(`/api/admin/users/${alumni.body.user._id}`)
+    .set('Authorization', `Bearer ${adminLogin.body.token}`)
+    .send({ verified: true });
+  assert.equal(verified.status, 200);
+
+  const opened = await request(app)
+    .post('/api/opportunities')
+    .set('Authorization', `Bearer ${alumni.body.token}`)
+    .send({
+      title: 'Alumni office hour on evaluation',
+      summary: 'Help a student cut a thesis down to something finishable.',
+      description: 'Read a one-page plan and mark what is out of scope.',
+      researchAreas: ['Machine Learning'],
+      department: 'CSE',
+      slots: 1,
+      status: 'open',
+    });
+  assert.equal(opened.status, 201);
+
+  const studentLogin = await request(app).post('/api/auth/login').send({
+    email: 'student.test@bup.edu.bd',
+    password: 'Student@2026',
+  });
+  const applied = await request(app)
+    .post('/api/requests')
+    .set('Authorization', `Bearer ${studentLogin.body.token}`)
+    .send({
+      to: alumni.body.user._id,
+      opportunity: opened.body._id,
+      topic: 'Alumni office hour on evaluation',
+      message: 'I want feedback on a one-page plan before I email a supervisor.',
+    });
+  assert.equal(applied.status, 201);
+  assert.equal(applied.body.opportunity, opened.body._id);
+
+  const detail = await request(app)
+    .get(`/api/opportunities/${opened.body._id}`)
+    .set('Authorization', `Bearer ${alumni.body.token}`);
+  assert.equal(detail.status, 200);
+  assert.equal(detail.body.applications.length, 1);
+
+  const accepted = await request(app)
+    .patch(`/api/requests/${applied.body._id}`)
+    .set('Authorization', `Bearer ${alumni.body.token}`)
+    .send({ status: 'accepted', responseNote: 'Send the plan.' });
+  assert.equal(accepted.status, 200);
+
+  const closed = await request(app)
+    .put(`/api/opportunities/${opened.body._id}`)
+    .set('Authorization', `Bearer ${alumni.body.token}`)
+    .send({ status: 'closed' });
+  assert.equal(closed.status, 200);
+  assert.equal(closed.body.status, 'closed');
+
+  const blocked = await request(app)
+    .post('/api/requests')
+    .set('Authorization', `Bearer ${studentLogin.body.token}`)
+    .send({
+      to: alumni.body.user._id,
+      opportunity: opened.body._id,
+      topic: 'Another try',
+      message: 'Can I still apply after it is closed today?',
+    });
+  assert.equal(blocked.status, 403);
+
+  const removed = await request(app)
+    .delete(`/api/opportunities/${opened.body._id}`)
+    .set('Authorization', `Bearer ${alumni.body.token}`);
+  assert.equal(removed.status, 200);
+});
+
+test('an administrator can delete another account but not their own', async () => {
+  const adminLogin = await request(app).post('/api/auth/login').send({
+    email: 'test.admin@bup.edu.bd',
+    password: 'Admin@2026',
+  });
+  const self = await request(app)
+    .delete(`/api/admin/users/${adminLogin.body.user._id}`)
+    .set('Authorization', `Bearer ${adminLogin.body.token}`);
+  assert.equal(self.status, 400);
+
+  const studentLogin = await request(app).post('/api/auth/login').send({
+    email: 'student.test@bup.edu.bd',
+    password: 'Student@2026',
+  });
+  const removed = await request(app)
+    .delete(`/api/admin/users/${studentLogin.body.user._id}`)
+    .set('Authorization', `Bearer ${adminLogin.body.token}`);
+  assert.equal(removed.status, 200);
+  const gone = await request(app).post('/api/auth/login').send({
+    email: 'student.test@bup.edu.bd',
+    password: 'Student@2026',
+  });
+  assert.equal(gone.status, 401);
+});
+
 test('search finds a faculty interest', async () => {
   const response = await request(app).get('/api/search').query({ q: 'Data Science' });
   assert.equal(response.status, 200);
