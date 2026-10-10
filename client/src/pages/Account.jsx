@@ -77,7 +77,7 @@ function AccountForm() {
         <p className="text-xs uppercase tracking-[0.18em] text-gold">{user.role}</p>
         <h1 className="mt-2 font-serif text-5xl">Your research profile</h1>
         <p className="mt-2 text-sm text-mist">{user.email}</p>
-        {user.role === 'faculty' || user.role === 'alumni' ? (
+        {['student', 'faculty', 'alumni'].includes(user.role) ? (
           <Link to="/running" className="mt-4 inline-flex rounded-full bg-gold px-4 py-2 text-sm font-semibold text-on-gold">
             Running opportunities and mentoring
           </Link>

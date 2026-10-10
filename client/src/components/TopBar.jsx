@@ -30,7 +30,7 @@ export function TopBar() {
   const [query, setQuery] = useState('');
   const [unreadCount, setUnreadCount] = useState(0);
   const unread = user ? unreadCount : 0;
-  const navLinks = user && (user.role === 'faculty' || user.role === 'alumni')
+  const navLinks = user && ['student', 'faculty', 'alumni'].includes(user.role)
     ? [...links, { to: '/running', label: 'Running' }]
     : links;
 
@@ -141,9 +141,9 @@ export function TopBar() {
                   <Link className="block rounded-xl px-3 py-2 text-sm hover:bg-panel-2" to="/requests">
                     Requests
                   </Link>
-                  {user.role === 'faculty' || user.role === 'alumni' ? (
+                  {['student', 'faculty', 'alumni'].includes(user.role) ? (
                     <Link className="block rounded-xl px-3 py-2 text-sm hover:bg-panel-2" to="/running">
-                      Running opportunities
+                      Running
                     </Link>
                   ) : null}
                   {user.role === 'admin' ? (

@@ -11,18 +11,23 @@ router.get(
   '/',
   requireAuth,
   asyncHandler(async (req, res) => {
-    if (!['faculty', 'alumni'].includes(req.user.role)) {
-      throw new HttpError(403, 'Running opportunities and mentoring are for faculty and alumni.');
+    const role = req.user.role;
+    if (!['faculty', 'alumni', 'student'].includes(role)) {
+      throw new HttpError(403, 'Running opportunities and mentoring are for students, faculty, and alumni.');
     }
+    const mentor = role === 'faculty' || role === 'alumni';
     const [opportunities, mentoring] = await Promise.all([
-      Opportunity.find({ supervisor: req.user.id, status: { $in: ['open', 'filled'] } })
-        .sort({ updatedAt: -1 })
-        .limit(50)
-        .populate('supervisor', 'name department designation'),
-      Request.find({ to: req.user.id, status: 'accepted' })
+      mentor
+        ? Opportunity.find({ supervisor: req.user.id, status: { $in: ['open', 'filled'] } })
+            .sort({ updatedAt: -1 })
+            .limit(50)
+            .populate('supervisor', 'name department designation')
+        : Promise.resolve([]),
+      Request.find(mentor ? { to: req.user.id, status: 'accepted' } : { from: req.user.id, status: 'accepted' })
         .sort({ updatedAt: -1 })
         .limit(50)
         .populate('from', personCard)
+        .populate('to', personCard)
         .populate('opportunity', 'title status'),
     ]);
     res.json({ opportunities, mentoring });

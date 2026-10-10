@@ -114,7 +114,7 @@ router.patch(
     await notify(item.from.id || item.from, {
       title: `${req.user.name} ${status} your request`,
       body: item.topic,
-      link: '/requests',
+      link: status === 'accepted' ? '/running' : '/requests',
       kind: 'request',
     });
     res.json(item);
@@ -162,10 +162,24 @@ router.post(
     await notify(recipient, {
       title: `${req.user.name} sent a message`,
       body: item.topic,
-      link: String(recipient) === String(item.to) ? '/running' : '/requests',
+      link: '/running',
       kind: 'request',
     });
     res.status(201).json(await message.populate('from', 'name role'));
+  }),
+);
+
+router.delete(
+  '/:id',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const item = await loadPartyRequest(req);
+    if (item.status !== 'accepted') {
+      throw new HttpError(400, 'Only an accepted chat can be deleted.');
+    }
+    await Message.deleteMany({ request: item.id });
+    await item.deleteOne();
+    res.json({ message: 'Chat deleted.' });
   }),
 );
 

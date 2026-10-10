@@ -311,7 +311,31 @@ test('accepted requests keep a message record, and faculty see running work', as
   const studentRunning = await request(app)
     .get('/api/running')
     .set('Authorization', `Bearer ${studentLogin.body.token}`);
-  assert.equal(studentRunning.status, 403);
+  assert.equal(studentRunning.status, 200);
+  assert.equal(studentRunning.body.opportunities.length, 0);
+  const studentChat = studentRunning.body.mentoring.find((item) => item.topic === 'Data science thesis');
+  assert.ok(studentChat);
+  assert.equal(studentChat.to.name, 'New Faculty');
+
+  const strangerDelete = await request(app)
+    .delete(`/api/requests/${accepted._id}`)
+    .set('Authorization', `Bearer ${stranger.body.token}`);
+  assert.equal(strangerDelete.status, 403);
+
+  const pendingDelete = await request(app)
+    .delete(`/api/requests/${pending.body._id}`)
+    .set('Authorization', `Bearer ${studentLogin.body.token}`);
+  assert.equal(pendingDelete.status, 400);
+
+  const removedChat = await request(app)
+    .delete(`/api/requests/${accepted._id}`)
+    .set('Authorization', `Bearer ${studentLogin.body.token}`);
+  assert.equal(removedChat.status, 200);
+  assert.equal(await Message.countDocuments({ request: accepted._id }), 0);
+  const goneChat = await request(app)
+    .get(`/api/requests/${accepted._id}/messages`)
+    .set('Authorization', `Bearer ${facultyLogin.body.token}`);
+  assert.equal(goneChat.status, 404);
 
   const alumniLogin = await request(app).post('/api/auth/login').send({
     email: 'alumni.mentor@bup.edu.bd',
